@@ -1,0 +1,149 @@
+body{
+background-color: aquamarine;
+}
+
+.game{
+    height: 600px;
+    width: 1200px;
+    background-color: blueviolet;
+    margin: auto;
+}
+
+.view{
+    height: 300px;
+    width: 1200px;
+    background-color: blue;
+    justify-content: center;
+    
+}
+#viewCanvas{
+    height: 300px;
+    width: 1100px;
+    margin-right: 50px;
+    margin-left: 50px;
+    background-color: red;
+}
+
+
+
+.grid {
+    height: 300px;
+    width: 600px;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+    background-color: blanchedalmond;
+    float: left;
+    }
+
+    .grid1 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }
+
+    .grid2 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }
+    .grid3 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        } 
+    .grid4 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }  
+    .grid5 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }          
+    .grid6 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }      
+    .grid7 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }   
+    .grid8 {
+        height: 100px;
+        width: 100px;
+        margin: 25px;
+        background-color: white;
+        }             
+
+
+
+
+.health {
+    height: 150px;
+    width: 600px;
+    background-color: aliceblue;
+    float: left;
+
+    }
+    
+
+.random{
+    height: 150px;
+    width: 600px;
+    background-color: green;
+    float: left;
+    justify-content: center;
+    display: flex;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+ 
+    float: left;
+}  
+    .random1 {
+    height: 100px;
+    width: 100px;
+    margin: 25px;
+    background-color: white;
+    }
+    .random2 {
+    height: 100px;
+    width: 100px;
+    margin: 25px;
+    background-color: white;
+    } 
+    .random3 {
+    height: 100px;
+    width: 100px;
+    margin: 25px;
+    background-color: white;
+    }  
+    .random4 {
+    height: 100px;
+    width: 100px;
+    margin: 25px;
+    background-color: white;
+    }                     
+
+
+.module{
+    height: 100%;
+    width: 100%
+}
+.module.dragging{
+    opacity: 0.5;
+}
