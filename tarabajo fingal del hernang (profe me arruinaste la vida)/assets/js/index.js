@@ -4,6 +4,13 @@ const mainX = width / 8;
 const mainY = height / 2;
 const mainH = 100;
 const mainW = 50;
+
+const monsX = width/ 2;
+const monsY = height / 2;
+const monsH = 100;
+const monsW = 50;
+
+
 let img; //.....................cambiar en el futuro cercano 
 let vecRandom = [];
 let vecGrid;
@@ -120,8 +127,8 @@ function viewGame() {
         console.log(random);
         if (random === 9) {
             isFighting = true;
-            alert("10");
-            startFight();
+            console.log("Start fight");
+            startFight(4);
         }
     }
 
@@ -197,8 +204,13 @@ function getRandomModule() {
     return modules[randomIndex];
 }
 
-function createMonster(selectedPosition) {
-    // Implementation for creating a monster
+function createMonster(monster, position) {
+    const spacing = 100; // Adjust the spacing between monsters
+    const X = monsX + position * spacing; // Adjust the multiplier to control the spacing
+    const Y = monsY;
+    console.log("Monster Position:", position, "X:", X);
+    ctx.fillStyle = "red";
+    ctx.fillRect(X, Y, monsW, monsH);
 }
 
 function getRandomMonster() {
@@ -207,9 +219,12 @@ function getRandomMonster() {
     return monsters[randomIndex];
 }
 
-function startFight() {
-    let cont1 = 4;
+function startFight(energy) {
+    let cont1 = energy;
     let position;
+    let random = getRandomInt(5);
+    let cont2 = random;
+    
     do {
         position = document.querySelector(`.random${cont1}`);
         if (position) {
@@ -217,6 +232,16 @@ function startFight() {
         }
         cont1 -= 1;
     } while (cont1 >= 1);
+
+    do {
+        const randomMonster = getRandomMonster();
+        createMonster(randomMonster, cont2);
+        cont2 -= 1;
+    } while (cont2 >= 1);
+}
+
+function fight(){
+
 }
 
 function endFight() {
