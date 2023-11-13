@@ -5,43 +5,73 @@ const mainY = height / 2;
 const mainH = 100;
 const mainW = 50;
 
-const monsX = width/ 2;
+const monsX = width / 2;
 const monsY = height / 2;
 const monsH = 100;
 const monsW = 50;
 
-
-let img; //.....................cambiar en el futuro cercano 
+let mainHealth = 4;
+let energy = 4;
+let usableModule;
+let img; //.....................cambiar en el futuro cercano
 let vecRandom = [];
 let vecGrid;
-let usableModule = [];
+let aliveMonster = [];
 
 class monster {
-    constructor(name, health, monsterImg) {
+    constructor(name, health, monsterImg, alive, stuned, bleeding) {
         this.name = name;
         this.health = health;
         this.monsterImg = monsterImg;
+        this.alive = alive;
+        this.stuned = stuned;
+        this.bleeding = bleeding;
     }
 }
 
-const monster1 = new monster("Meaty", 6, img);
-const monster2 = new monster("Slimy", 2, img);
-const monster3 = new monster("Spiky", 3, img);
-const monster4 = new monster("Ugly", 1, img);
+const monster1 = new monster("Meaty", 6, img, true, false, false);
+const monster2 = new monster("Slimy", 2, img, true, false, false);
+const monster3 = new monster("Spiky", 3, img, true, false, false);
+const monster4 = new monster("Ugly", 1, img, true, false, false);
 
 class moduleUse {
-    constructor(dmg, uses, name, moduleImg) {
+    constructor(dmg, uses, name, moduleImg, special, calories) {
         this.dmg = dmg;
         this.uses = uses;
         this.moduleName = name;
         this.moduleImg = moduleImg;
+        this.special = special;
+        this.calories = calories;
     }
 }
 
-const module1 = new moduleUse(2, 0, "Teeth", img);
-const module2 = new moduleUse(5, 1, "SharpBones", img);
-const module3 = new moduleUse(0, 5, "GreasyBlader", img);
-const module4 = new moduleUse(3, 0, "HeavyHand", img);
+const module1 = new moduleUse(2, 0, "Teeth", img, "eat", 2);
+const module2 = new moduleUse(5, 1, "SharpBones", img, "blood", 3);
+const module3 = new moduleUse(0, 5, "GreasyBlader", img, "stun", 9);
+const module4 = new moduleUse(3, 0, "HeavyHand", img, "shuffle", 0);
+
+function specialModuleFunction(module, aliveMonster) {
+    if (module.special === "eat") {
+        energy += 1; // Increment energy
+    }
+    if (module.special === "blood") {
+        // Using the first alive monster, consider changing if needed
+        if (aliveMonster.length > 0) {
+            aliveMonster[0].bleeding = true;
+        }
+    }
+    if (module.special === "stun") {
+        // Using the first alive monster, consider changing if needed
+        if (aliveMonster.length > 0) {
+            aliveMonster[0].stuned = true;
+        }
+    }
+    if (module.special === "shuffle") {
+        // Shuffling the monsters
+        const aux = aliveMonster.shift(); // Remove the first monster
+        aliveMonster.push(aux); // Add it to the end
+    }
+}
 
 let back1 = {
     x: 0,
@@ -83,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
         gridContainer.querySelector(".grid8")
     ];
 
-    initializeGame()
+    initializeGame();
 });
 
 function initializeGame() {
@@ -92,14 +122,12 @@ function initializeGame() {
     canvas.width = width;
     ctx = canvas.getContext("2d");
 
-    // Start the game loop
     requestAnimationFrame(viewGame);
 }
 
 function viewGame() {
     ctx.clearRect(0, 0, width, height);
 
-    // Draw background
     ctx.fillStyle = "gray";
     ctx.fillRect(back1.x, back1.y, back1.width, back1.height);
     ctx.fillStyle = "orange";
@@ -109,9 +137,8 @@ function viewGame() {
     ctx.fillStyle = "red";
     ctx.fillRect(main.x, main.y, main.width, main.height);
 
-    // Move the background at a fixed speed when "D" is held down
     if (isDPressed && !isFighting) {
-        back1.x -= 5; // Adjust this value to control the speed
+        back1.x -= 5;
         back2.x -= 5;
     }
 
@@ -128,7 +155,7 @@ function viewGame() {
         if (random === 9) {
             isFighting = true;
             console.log("Start fight");
-            startFight(4);
+            startFight(energy);
         }
     }
 
@@ -137,7 +164,6 @@ function viewGame() {
     }
 }
 
-// Add event listeners to handle key presses
 window.addEventListener("keydown", function (e) {
     if (e.code === "KeyD") {
         isDPressed = true;
@@ -151,17 +177,15 @@ window.addEventListener("keyup", function (e) {
 });
 
 async function createModule(selectedDiv) {
-    // Check if the selected div already contains a module
     const existingModules = selectedDiv.getElementsByClassName("module");
     if (existingModules.length > 0) {
-        // You can choose to do nothing or handle this case as needed
-        console.log("This div already contains a module");
         return;
     }
 
     const randomModule = getRandomModule();
+    vecRandom.push(randomModule);
     const module = document.createElement("div");
-    module.classList.add("module");
+    module.classList.add("module", "dragging"); // Add 'dragging' class
     module.style.width = "18rem";
 
     module.innerHTML = `
@@ -170,33 +194,33 @@ async function createModule(selectedDiv) {
             <h3>${randomModule.moduleName}</h3>
         </div>
     `;
-    selectedDiv.appendChild(module)
-    vecRandom.push(module)
+    selectedDiv.appendChild(module);
+    vecRandom.push(module);
 
-    vecRandom.forEach(module => {
-        module.addEventListener('dragstart', () => {
-            module.classList.add('dragging');
-        });
-        module.addEventListener('dragend', () => {
-            module.classList.remove('dragging');
-        });
+    module.addEventListener('dragstart', () => {
+        module.classList.add('dragging');
+    });
+
+    module.addEventListener('dragend', () => {
+        module.classList.remove('dragging');
     });
 
     vecGrid.forEach(container => {
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const existingModules = container.getElementsByClassName("module");
-            const module = document.querySelector('.module.dragging');
-            if(existingModules.length > 0){
-                    
-            }
-            else{
-                container.appendChild(module); // Fix the typo here
+            const draggedModule = document.querySelector('.module.dragging');
+            if (existingModules.length === 0) {
+                container.appendChild(draggedModule);
+            } else {
+                const indexToInsert = Array.from(container.children).indexOf(draggedModule);
+                container.insertBefore(draggedModule, container.children[indexToInsert]);
             }
         });
     });
-    
 }
+
+
 
 function getRandomModule() {
     const modules = [module1, module2, module3, module4];
@@ -205,8 +229,9 @@ function getRandomModule() {
 }
 
 function createMonster(monster, position) {
-    const spacing = 100; // Adjust the spacing between monsters
-    const X = monsX + position * spacing; // Adjust the multiplier to control the spacing
+    aliveMonster.push(monster);
+    const spacing = 100;
+    const X = monsX + position * spacing;
     const Y = monsY;
     console.log("Monster Position:", position, "X:", X);
     ctx.fillStyle = "red";
@@ -220,11 +245,12 @@ function getRandomMonster() {
 }
 
 function startFight(energy) {
+    energy = 4;
     let cont1 = energy;
     let position;
     let random = getRandomInt(5);
     let cont2 = random;
-    
+
     do {
         position = document.querySelector(`.random${cont1}`);
         if (position) {
@@ -238,10 +264,56 @@ function startFight(energy) {
         createMonster(randomMonster, cont2);
         cont2 -= 1;
     } while (cont2 >= 1);
+    fight();
 }
 
-function fight(){
+function fight() {
+    do {
+        aliveMonster.forEach(monster => {
+            mainTurn(monster);
+            monsterTurn(monster);
+        });
+    } while (win());
+}
 
+function win() {
+    let cont = 0;
+    aliveMonster.forEach(monster => {
+        if (monster.alive === false) {
+            cont += 1;
+        }
+    });
+    if (cont === aliveMonster.length && mainHealth !== 0) {
+        return true;
+    } else if (mainHealth === 0) {
+        alert("skill issue");
+        return false;
+    }
+}
+
+function mainTurn(monster) {
+    usableModule = []; // Clear the array
+
+    vecGrid.forEach(div => {
+        usableModule.push(Array.from(div.getElementsByClassName("module")));
+    });
+
+    const flattenedModules = usableModule.flat();
+
+    flattenedModules.forEach(moduleUse => {
+        specialModuleFunction(moduleUse, aliveMonster);
+        monster.health -= moduleUse.dmg;
+    });
+}
+function monsterTurn(monster) {
+    if (monster.stuned === true) {
+        monster.stuned = false;
+        return;
+    }
+    if (monster.bleeding === true) {
+        monster.health -= 1;
+    }
+    mainHealth -= 1;
 }
 
 function endFight() {
@@ -255,6 +327,8 @@ function endFight() {
         }
         cont1 -= 1;
     } while (cont1 >= 1);
+    monsterTurn = [];
+    usableModule = [];
 }
 
 function getRandomInt(max) {
