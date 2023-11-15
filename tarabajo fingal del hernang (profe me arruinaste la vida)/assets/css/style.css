@@ -92,13 +92,48 @@ background-color: aquamarine;
 
 
 
-.health {
-    height: 150px;
-    width: 600px;
-    background-color: aliceblue;
-    float: left;
-
-    }
+        .health {
+            height: 150px;
+            width: 600px;
+            background-color: aliceblue;
+            align-items: center;
+            justify-content: center;
+            display: flex;
+        
+            flex-direction: row;
+            flex-wrap: wrap;
+            background-color: white;
+            float: left;
+        
+            }
+            
+        .endTurn{
+            height: 100px;
+            width: 100px;
+            margin: 25px;
+        
+        }
+        
+        .healthNumber{
+            height: 100px;
+            width: 100px;
+            margin: 25px;
+            background-color: aquamarine;
+        }
+        
+        .mouth{
+            height: 100px;
+            width: 100px;
+            margin: 25px;
+            background-color: brown;
+        }
+        
+        .energy{
+            height: 100px;
+            width: 100px;
+            margin: 25px;
+            background-color: aquamarine;
+        }
     
 
 .random{

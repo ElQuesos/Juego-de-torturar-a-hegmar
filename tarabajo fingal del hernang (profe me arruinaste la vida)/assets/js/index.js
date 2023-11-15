@@ -10,8 +10,9 @@ const monsY = height / 2;
 const monsH = 100;
 const monsW = 50;
 
-let mainHealth = 4;
+let mainHealth = 6;
 let energy = 4;
+
 let usableModule;
 let img; //.....................cambiar en el futuro cercano
 let vecRandom = [];
@@ -19,20 +20,21 @@ let vecGrid;
 let aliveMonster = [];
 
 class monster {
-    constructor(name, health, monsterImg, alive, stuned, bleeding) {
+    constructor(name, health, monsterImg, alive, stuned, bleeding, dmg) {
         this.name = name;
         this.health = health;
         this.monsterImg = monsterImg;
         this.alive = alive;
         this.stuned = stuned;
         this.bleeding = bleeding;
+        this.dmg = dmg;
     }
 }
 
-const monster1 = new monster("Meaty", 6, img, true, false, false);
-const monster2 = new monster("Slimy", 2, img, true, false, false);
-const monster3 = new monster("Spiky", 3, img, true, false, false);
-const monster4 = new monster("Ugly", 1, img, true, false, false);
+const monster1 = new monster("Meaty", 6, img, true, false, false, 1);
+const monster2 = new monster("Slimy", 2, img, true, false, false, 1);
+const monster3 = new monster("Spiky", 3, img, true, false, false, 1);
+const monster4 = new monster("Ugly", 1, img, true, false, false, 1);
 
 class moduleUse {
     constructor(dmg, uses, name, moduleImg, special, calories) {
@@ -137,6 +139,11 @@ function viewGame() {
     ctx.fillStyle = "red";
     ctx.fillRect(main.x, main.y, main.width, main.height);
 
+    ctx.fillStyle = "green";
+    ctx.font = "12px Arial";
+    ctx.fillText(`Health: ${mainHealth}`, mainX, mainY + 120);
+
+
     if (isDPressed && !isFighting) {
         back1.x -= 5;
         back2.x -= 5;
@@ -155,7 +162,8 @@ function viewGame() {
         if (random === 9) {
             isFighting = true;
             console.log("Start fight");
-            startFight(energy);
+            startTurn();
+            random = 0;
         }
     }
 
@@ -213,8 +221,7 @@ async function createModule(selectedDiv) {
             if (existingModules.length === 0) {
                 container.appendChild(draggedModule);
             } else {
-                const indexToInsert = Array.from(container.children).indexOf(draggedModule);
-                container.insertBefore(draggedModule, container.children[indexToInsert]);
+
             }
         });
     });
@@ -228,14 +235,28 @@ function getRandomModule() {
     return modules[randomIndex];
 }
 
-function createMonster(monster, position) {
+function createMonster(monster) {
     aliveMonster.push(monster);
-    const spacing = 100;
-    const X = monsX + position * spacing;
-    const Y = monsY;
-    console.log("Monster Position:", position, "X:", X);
-    ctx.fillStyle = "red";
-    ctx.fillRect(X, Y, monsW, monsH);
+
+    aliveMonster.forEach((monster, index) => {
+        const X = monsX + index * 100; // Adjust this based on your monster placement logic
+        const Y = monsY - 10; // Adjust this based on your monster placement logic
+
+        // Draw monster name
+        ctx.fillStyle = "black";
+        ctx.font = "14px Arial";
+        ctx.fillText(monster.name, X, Y);
+
+        // Draw monster health
+        ctx.fillStyle = "green";
+        ctx.font = "12px Arial";
+        ctx.fillText(`Health: ${monster.health}`, X, Y + 120);
+
+        // Draw the monster
+        ctx.fillStyle = "red";
+        ctx.fillRect(X, monsY, monsW, monsH);
+    });
+    
 }
 
 function getRandomMonster() {
@@ -244,20 +265,10 @@ function getRandomMonster() {
     return monsters[randomIndex];
 }
 
-function startFight(energy) {
-    energy = 4;
-    let cont1 = energy;
-    let position;
+function startTurn() {
+
     let random = getRandomInt(5);
     let cont2 = random;
-
-    do {
-        position = document.querySelector(`.random${cont1}`);
-        if (position) {
-            createModule(position);
-        }
-        cont1 -= 1;
-    } while (cont1 >= 1);
 
     do {
         const randomMonster = getRandomMonster();
@@ -268,31 +279,27 @@ function startFight(energy) {
 }
 
 function fight() {
-    do {
-        aliveMonster.forEach(monster => {
-            mainTurn(monster);
-            monsterTurn(monster);
-        });
-    } while (win());
+isFighting = true;
+aliveMonster.forEach(monster => {
+    mainTurn (monster);
+    monsterTurn(monster); 
+});
+
 }
 
-function win() {
-    let cont = 0;
-    aliveMonster.forEach(monster => {
-        if (monster.alive === false) {
-            cont += 1;
-        }
-    });
-    if (cont === aliveMonster.length && mainHealth !== 0) {
-        return true;
-    } else if (mainHealth === 0) {
-        alert("skill issue");
-        return false;
-    }
-}
+
 
 function mainTurn(monster) {
-    usableModule = []; // Clear the array
+    energy = 4;
+    let cont1 = energy;
+    let position;
+    do {
+        position = document.querySelector(`.random${cont1}`);
+        if (position) {
+            createModule(position);
+        }
+        cont1 -= 1;
+    } while (cont1 >= 1);
 
     vecGrid.forEach(div => {
         usableModule.push(Array.from(div.getElementsByClassName("module")));
