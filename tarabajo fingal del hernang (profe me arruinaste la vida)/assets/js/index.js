@@ -11,13 +11,14 @@ const monsH = 100;
 const monsW = 50;
 
 let mainHealth = 6;
-let energy = 4;
+let energy = 7;
 
 let usableModule;
 let img; //.....................cambiar en el futuro cercano
 let vecRandom = [];
-let vecGrid;
-let aliveMonster = [];
+let vecGrid = [] ;
+let aliveMonsters = [];
+let createdMonsters = [];
 
 class monster {
     constructor(name, health, monsterImg, alive, stuned, bleeding, dmg) {
@@ -125,50 +126,63 @@ function initializeGame() {
     ctx = canvas.getContext("2d");
 
     requestAnimationFrame(viewGame);
+    updateInfo();
 }
 
 function viewGame() {
     ctx.clearRect(0, 0, width, height);
 
+    if (!isFighting) {
+        drawBackground();
+        drawMainCharacter();
+        checkDPressed();
+        checkRandomForFight();
+    } else {
+        showMonsters();
+    }
+
+    requestAnimationFrame(viewGame);
+}
+
+function drawBackground() {
     ctx.fillStyle = "gray";
     ctx.fillRect(back1.x, back1.y, back1.width, back1.height);
     ctx.fillStyle = "orange";
     ctx.fillRect(back2.x, back2.y, back2.width, back2.height);
+}
 
-    // Draw the main character
+function drawMainCharacter() {
     ctx.fillStyle = "red";
     ctx.fillRect(main.x, main.y, main.width, main.height);
 
     ctx.fillStyle = "green";
     ctx.font = "12px Arial";
     ctx.fillText(`Health: ${mainHealth}`, mainX, mainY + 120);
+}
 
-
+function checkDPressed() {
     if (isDPressed && !isFighting) {
         back1.x -= 5;
         back2.x -= 5;
-    }
 
-    if (back1.x + back1.width <= 0) {
-        back1.x = back2.x + back2.width;
+        if (back1.x + back1.width <= 0) {
+            back1.x = back2.x + back2.width;
+        }
+        if (back2.x + back2.width <= 0) {
+            back2.x = back1.x + back1.width;
+        }
     }
-    if (back2.x + back2.width <= 0) {
-        back2.x = back1.x + back1.width;
-    }
+}
 
+function checkRandomForFight() {
     if (isDPressed && !isFighting) {
         let random = getRandomInt(10);
-        console.log(random);
         if (random === 9) {
             isFighting = true;
             console.log("Start fight");
             startTurn();
             random = 0;
         }
-    }
-
-    if (!isFighting) {
-        requestAnimationFrame(viewGame);
     }
 }
 
@@ -225,6 +239,17 @@ async function createModule(selectedDiv) {
             }
         });
     });
+    let mouth = document.querySelector(".mouth"); // Corregido el selector aquí
+    mouth.addEventListener('dragover', e => {
+        e.preventDefault();
+        const draggedModule = document.querySelector('.module.dragging');
+        draggedModule.remove(); // Usar remove() para eliminar el módulo
+        energy += 1;
+        if (energy === 10) {
+            mainHealth += 1;
+        }
+        updateInfo();
+    });
 }
 
 
@@ -235,28 +260,35 @@ function getRandomModule() {
     return modules[randomIndex];
 }
 
-function createMonster(monster) {
-    aliveMonster.push(monster);
+function createMonster() {
+    let random = getRandomInt(5);
+    let cont2 = random;
+    
+    do {
+        const randomMonster = getRandomMonster();
+        cont2 -= 1;
+        createdMonsters.push(randomMonster);
+    } while (cont2 >= 1);
+}
 
-    aliveMonster.forEach((monster, index) => {
-        const X = monsX + index * 100; // Adjust this based on your monster placement logic
-        const Y = monsY - 10; // Adjust this based on your monster placement logic
+function showMonsters() {
+    const monsterSpacing = 120; // Espacio entre los monstruos
 
-        // Draw monster name
+    createdMonsters.forEach((monster, index) => {
+        const X = monsX + index * monsterSpacing; // Calcula la posición X única para cada monstruo
+        const Y = monsY - 10; // Y fijo para todos los monstruos
+
         ctx.fillStyle = "black";
         ctx.font = "14px Arial";
         ctx.fillText(monster.name, X, Y);
 
-        // Draw monster health
         ctx.fillStyle = "green";
         ctx.font = "12px Arial";
         ctx.fillText(`Health: ${monster.health}`, X, Y + 120);
 
-        // Draw the monster
         ctx.fillStyle = "red";
-        ctx.fillRect(X, monsY, monsW, monsH);
+        ctx.fillRect(X, monsY, monsW, monsH); // Dibuja un rectángulo para cada monstruo
     });
-    
 }
 
 function getRandomMonster() {
@@ -265,79 +297,107 @@ function getRandomMonster() {
     return monsters[randomIndex];
 }
 
+
 function startTurn() {
-
-    let random = getRandomInt(5);
-    let cont2 = random;
-
-    do {
-        const randomMonster = getRandomMonster();
-        createMonster(randomMonster, cont2);
-        cont2 -= 1;
-    } while (cont2 >= 1);
-    fight();
-}
-
-function fight() {
-isFighting = true;
-aliveMonster.forEach(monster => {
-    mainTurn (monster);
-    monsterTurn(monster); 
-});
-
-}
-
-
-
-function mainTurn(monster) {
-    energy = 4;
-    let cont1 = energy;
-    let position;
-    do {
-        position = document.querySelector(`.random${cont1}`);
-        if (position) {
-            createModule(position);
+    createdMonsters.forEach(monster => {
+        if (monster.health > 0) {
+            aliveMonsters.push(monster);
         }
-        cont1 -= 1;
-    } while (cont1 >= 1);
+    });
 
+    if (aliveMonsters.length > 0 && mainHealth > 0) {
+        isFighting = true;
+        energy = (energy-4)+1;
+        let cont1 = energy;
+        let position;
+
+        do {
+            position = document.querySelector(`.random${cont1}`);
+            if (position) {
+                createModule(position);
+            }
+            cont1 -= 1;
+        } while (cont1 >= 1);
+        updateInfo()
+        showMonsters();
+    }
+}
+
+let buttonTurn = document.getElementsByClassName(".endTurn");
+buttonTurn.addEventListener("click", mainTurn());
+
+function mainTurn() {
+    let monster;
+    usableModule = []; // Inicializar como un array vacío
     vecGrid.forEach(div => {
         usableModule.push(Array.from(div.getElementsByClassName("module")));
     });
 
-    const flattenedModules = usableModule.flat();
+    const flattenedModules = [].concat.apply([], usableModule);
 
     flattenedModules.forEach(moduleUse => {
-        specialModuleFunction(moduleUse, aliveMonster);
-        monster.health -= moduleUse.dmg;
+        monster = aliveMonsters[0];
+        if (monster && monster.health > 0) { // Agregado chequeo de existencia de monster
+            specialModuleFunction(moduleUse, monster);
+            monster.health -= moduleUse.dmg;
+        } else if (monster) {
+            aliveMonsters.splice(0, 1); // Eliminar el primer elemento de aliveMonsters si está muerto
+        }
     });
+    updateInfo();
+    monsterTurn();
 }
-function monsterTurn(monster) {
-    if (monster.stuned === true) {
-        monster.stuned = false;
-        return;
-    }
-    if (monster.bleeding === true) {
-        monster.health -= 1;
-    }
-    mainHealth -= 1;
+
+function monsterTurn () {
+
+        aliveMonsters.forEach(monster => {
+            if (monster.stuned === true) {
+                monster.stuned = false;
+                return;
+            }
+            if (monster.bleeding === true) {
+                monster.health -= 1;
+            }
+            mainHealth -= monster.dmg;
+        });
+    updateInfo()
+    //endFight();    
 }
+
+
+
 
 function endFight() {
     isFighting = false;
-    let cont1 = 4;
-    let position;
-    do {
-        position = document.querySelector(`.random${cont1}`);
-        if (position) {
-            position.remove();
-        }
-        cont1 -= 1;
-    } while (cont1 >= 1);
+    energy=7;
+    cleanModules();
     monsterTurn = [];
     usableModule = [];
+    updateInfo()
+}
+
+function cleanModules() {
+    vecGrid.forEach(div => {
+        const modules = div.getElementsByClassName("module");
+        while (modules.length > 0) {
+            modules[0].remove();
+        }
+    });
+    vecRandom.forEach(div => {
+        const modules = div.getElementsByClassName("module");
+        while (modules.length > 0) {
+            modules[0].remove();
+        }
+    });
 }
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
+}
+
+function updateInfo(){
+    let divHealth = document.querySelector(".healthNumber");
+    let divEnergy = document.querySelector(".energy");
+    divHealth.innerText = mainHealth;
+    divEnergy.innerText = energy;
 }
