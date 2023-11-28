@@ -11,8 +11,8 @@ const monsH = 100;
 const monsW = 50;
 
 let mainHealth = 6;
-let energy = 7;
-
+let energy = 4;
+let canStartFight = true;
 let usableModule;
 let img; //.....................cambiar en el futuro cercano
 let vecRandom = [];
@@ -24,6 +24,7 @@ class monster {
     constructor(name, health, monsterImg, alive, stuned, bleeding, dmg) {
         this.name = name;
         this.health = health;
+        this.originalHealth = health; // Store the original health value
         this.monsterImg = monsterImg;
         this.alive = alive;
         this.stuned = stuned;
@@ -50,7 +51,7 @@ class moduleUse {
 
 const module1 = new moduleUse(2, 0, "Teeth", img, "eat", 2);
 const module2 = new moduleUse(5, 1, "SharpBones", img, "blood", 3);
-const module3 = new moduleUse(0, 5, "GreasyBlader", img, "stun", 9);
+const module3 = new moduleUse(0, 5, "GreasyBlader", img, "stun", 10);
 const module4 = new moduleUse(3, 0, "HeavyHand", img, "shuffle", 0);
 
 function specialModuleFunction(module, aliveMonster) {
@@ -131,13 +132,15 @@ function initializeGame() {
 
 function viewGame() {
     ctx.clearRect(0, 0, width, height);
-
+    drawBackground();
+    drawMainCharacter();
+    updateInfo();
     if (!isFighting) {
-        drawBackground();
-        drawMainCharacter();
+        updateInfo();
         checkDPressed();
         checkRandomForFight();
     } else {
+        updateInfo();
         showMonsters();
     }
 
@@ -160,6 +163,18 @@ function drawMainCharacter() {
     ctx.fillText(`Health: ${mainHealth}`, mainX, mainY + 120);
 }
 
+window.addEventListener("keydown", function (e) {
+    if (e.code === "KeyD") {
+        isDPressed = true;
+    }
+});
+
+window.addEventListener("keyup", function (e) {
+    if (e.code === "KeyD") {
+        isDPressed = false;
+    }
+});
+
 function checkDPressed() {
     if (isDPressed && !isFighting) {
         back1.x -= 5;
@@ -175,28 +190,21 @@ function checkDPressed() {
 }
 
 function checkRandomForFight() {
-    if (isDPressed && !isFighting) {
+    if (canStartFight && isDPressed) {
+        console.log("Checking for fight...");
         let random = getRandomInt(10);
-        if (random === 9) {
+        if (random === 9 && !isFighting) {
+            random = 0;
+            canStartFight = false; // Prevent further checks until the fight is over
             isFighting = true;
             console.log("Start fight");
+            createMonster();
             startTurn();
-            random = 0;
         }
     }
 }
 
-window.addEventListener("keydown", function (e) {
-    if (e.code === "KeyD") {
-        isDPressed = true;
-    }
-});
 
-window.addEventListener("keyup", function (e) {
-    if (e.code === "KeyD") {
-        isDPressed = false;
-    }
-});
 
 async function createModule(selectedDiv) {
     const existingModules = selectedDiv.getElementsByClassName("module");
@@ -207,51 +215,55 @@ async function createModule(selectedDiv) {
     const randomModule = getRandomModule();
     vecRandom.push(randomModule);
     const module = document.createElement("div");
-    module.classList.add("module", "dragging"); // Add 'dragging' class
+    module.classList.add("module");
     module.style.width = "18rem";
 
     module.innerHTML = `
-        <div class="${randomModule.moduleId}" draggable="true">
-            <img src="${randomModule.moduleImg}" alt="Module Image">
-            <h3>${randomModule.moduleName}</h3>
-        </div>
-    `;
+    <div class="${randomModule.moduleId}" data-module-calories="${randomModule.calories}" draggable="true">
+        <img src="${randomModule.moduleImg}" alt="Module Image">
+        <h3>${randomModule.moduleName}</h3>
+    </div>
+`;
     selectedDiv.appendChild(module);
-    vecRandom.push(module);
 
-    module.addEventListener('dragstart', () => {
-        module.classList.add('dragging');
+    module.addEventListener('dragstart', (e) => {
+        e.currentTarget.classList.add('dragging');
     });
 
-    module.addEventListener('dragend', () => {
-        module.classList.remove('dragging');
+    module.addEventListener('dragend', (e) => {
+        e.currentTarget.classList.remove('dragging');
+    });
+    
+
+    const mouth = document.querySelector(".mouth");
+    mouth.addEventListener('dragover', e => {
+        e.preventDefault();
+        const dmodule = document.querySelector('.module.dragging');
+        if (dmodule !== null) {
+            mouth.appendChild(dmodule);
+            const moduleCalories = parseInt(dmodule.getAttribute('data-module-calories'));
+            console.log("Module calories:", moduleCalories);
+            energy += moduleCalories;
+            dmodule.remove(); 
+            updateInfo();
+            if (energy >= 10) {
+                mainHealth += 1;
+                energy -= 10;
+            }
+        }
     });
 
     vecGrid.forEach(container => {
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const existingModules = container.getElementsByClassName("module");
-            const draggedModule = document.querySelector('.module.dragging');
+            let draggedModule = document.querySelector('.module.dragging');
             if (existingModules.length === 0) {
                 container.appendChild(draggedModule);
-            } else {
-
             }
         });
     });
-    let mouth = document.querySelector(".mouth"); // Corregido el selector aquí
-    mouth.addEventListener('dragover', e => {
-        e.preventDefault();
-        const draggedModule = document.querySelector('.module.dragging');
-        draggedModule.remove(); // Usar remove() para eliminar el módulo
-        energy += 1;
-        if (energy === 10) {
-            mainHealth += 1;
-        }
-        updateInfo();
-    });
 }
-
 
 
 function getRandomModule() {
@@ -268,13 +280,14 @@ function createMonster() {
         const randomMonster = getRandomMonster();
         cont2 -= 1;
         createdMonsters.push(randomMonster);
-    } while (cont2 >= 1);
+        console.log(randomMonster);
+    } while (cont2 != 0);
 }
 
 function showMonsters() {
     const monsterSpacing = 120; // Espacio entre los monstruos
 
-    createdMonsters.forEach((monster, index) => {
+    aliveMonsters.forEach((monster, index) => {
         const X = monsX + index * monsterSpacing; // Calcula la posición X única para cada monstruo
         const Y = monsY - 10; // Y fijo para todos los monstruos
 
@@ -296,9 +309,17 @@ function getRandomMonster() {
     const randomIndex = getRandomInt(monsters.length);
     return monsters[randomIndex];
 }
-
+let buttonTurn;
+document.addEventListener("DOMContentLoaded", function () {
+    buttonTurn = document.querySelector(".endTurn");
+    buttonTurn.disabled = true;
+    buttonTurn.addEventListener("click", mainTurn);
+});
 
 function startTurn() {
+    buttonTurn.disabled = false;
+    console.log("Start turn");
+    cleanModules();
     createdMonsters.forEach(monster => {
         if (monster.health > 0) {
             aliveMonsters.push(monster);
@@ -307,7 +328,6 @@ function startTurn() {
 
     if (aliveMonsters.length > 0 && mainHealth > 0) {
         isFighting = true;
-        energy = (energy-4)+1;
         let cont1 = energy;
         let position;
 
@@ -315,20 +335,26 @@ function startTurn() {
             position = document.querySelector(`.random${cont1}`);
             if (position) {
                 createModule(position);
+                // Decrement energy only if a module is created successfully
+                if (energy > 0) {
+                    energy -= 1;
+                }
             }
             cont1 -= 1;
         } while (cont1 >= 1);
-        updateInfo()
-        showMonsters();
+
+        updateInfo();
+    } else {
+        endFight();
     }
 }
 
-let buttonTurn = document.getElementsByClassName(".endTurn");
-buttonTurn.addEventListener("click", mainTurn());
 
 function mainTurn() {
+    canStartFight = true;
+    console.log("Start fight");
     let monster;
-    usableModule = []; // Inicializar como un array vacío
+    usableModule = []; 
     vecGrid.forEach(div => {
         usableModule.push(Array.from(div.getElementsByClassName("module")));
     });
@@ -337,11 +363,11 @@ function mainTurn() {
 
     flattenedModules.forEach(moduleUse => {
         monster = aliveMonsters[0];
-        if (monster && monster.health > 0) { // Agregado chequeo de existencia de monster
+        if (monster && monster.health > 0) { 
             specialModuleFunction(moduleUse, monster);
             monster.health -= moduleUse.dmg;
         } else if (monster) {
-            aliveMonsters.splice(0, 1); // Eliminar el primer elemento de aliveMonsters si está muerto
+            aliveMonsters.splice(0, 1); 
         }
     });
     updateInfo();
@@ -349,7 +375,7 @@ function mainTurn() {
 }
 
 function monsterTurn () {
-
+    updateInfo();
         aliveMonsters.forEach(monster => {
             if (monster.stuned === true) {
                 monster.stuned = false;
@@ -358,36 +384,46 @@ function monsterTurn () {
             if (monster.bleeding === true) {
                 monster.health -= 1;
             }
+
+            setTimeout(() => {alert(monster.name + " does an attack for " + monster.dmg + " damage")}, 100);
             mainHealth -= monster.dmg;
         });
-    updateInfo()
-    //endFight();    
+        aliveMonsters=[]
+    updateInfo();
+    startTurn();
 }
 
 
 
 
 function endFight() {
+    if (aliveMonsters.length <= 0 && mainHealth > 0) {
+        alert("you win");
+    } else {
+        alert("you lose");
+    }
+
+    createdMonsters.forEach(monster => {
+        monster.health = monster.originalHealth;
+    });
+
+    // Resetting all arrays and variables
     isFighting = false;
-    energy=7;
+    energy = 4;
     cleanModules();
-    monsterTurn = [];
+    aliveMonsters = [];
     usableModule = [];
-    updateInfo()
+    createdMonsters = []; 
+    updateInfo();
+    buttonTurn.disabled = true;
 }
 
 function cleanModules() {
-    vecGrid.forEach(div => {
-        const modules = div.getElementsByClassName("module");
-        while (modules.length > 0) {
-            modules[0].remove();
-        }
-    });
-    vecRandom.forEach(div => {
-        const modules = div.getElementsByClassName("module");
-        while (modules.length > 0) {
-            modules[0].remove();
-        }
+    vecGrid.forEach(grid => {
+        const modules = grid.querySelectorAll(".module");
+        modules.forEach(module => {
+            module.remove();
+        });
     });
 }
 
@@ -395,9 +431,22 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
 
-function updateInfo(){
+async function updateInfo() {
     let divHealth = document.querySelector(".healthNumber");
     let divEnergy = document.querySelector(".energy");
-    divHealth.innerText = mainHealth;
-    divEnergy.innerText = energy;
+
+
+    if (divHealth && divEnergy) {
+        divHealth.innerText = mainHealth;
+        divEnergy.innerText = energy;
+    }
+
+
+    ctx.clearRect(0, 0, width, height);
+    drawBackground();
+    drawMainCharacter();
+    if (isFighting) {
+        showMonsters();
+    }
 }
+
