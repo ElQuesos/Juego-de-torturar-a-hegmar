@@ -14,7 +14,7 @@ let mainHealth = 6;
 let energy = 4;
 let canStartFight = true;
 let usableModule;
-let img; //.....................cambiar en el futuro cercano
+let img; 
 let vecRandom = [];
 let vecGrid = [];
 let aliveMonsters = [];
@@ -24,7 +24,7 @@ class monster {
   constructor(name, health, monsterImg, alive, stuned, bleeding, dmg) {
     this.name = name;
     this.health = health;
-    this.originalHealth = health; // Store the original health value
+    this.originalHealth = health; 
     this.monsterImg = monsterImg;
     this.alive = alive;
     this.stuned = stuned;
@@ -56,24 +56,21 @@ const module4 = new moduleUse(3, 0, "HeavyHand", img, "shuffle", 0);
 
 function specialModuleFunction(module, aliveMonster) {
   if (module.special === "eat") {
-    energy += 1; // Increment energy
+    energy += 1; 
   }
   if (module.special === "blood") {
-    // Using the first alive monster, consider changing if needed
     if (aliveMonster.length > 0) {
       aliveMonster[0].bleeding = true;
     }
   }
   if (module.special === "stun") {
-    // Using the first alive monster, consider changing if needed
     if (aliveMonster.length > 0) {
       aliveMonster[0].stuned = true;
     }
   }
   if (module.special === "shuffle") {
-    // Shuffling the monsters
-    const aux = aliveMonster.shift(); // Remove the first monster
-    aliveMonster.push(aux); // Add it to the end
+    const aux = aliveMonster.shift(); 
+    aliveMonster.push(aux); 
   }
 }
 
@@ -192,10 +189,10 @@ function checkDPressed() {
 function checkRandomForFight() {
   if (canStartFight && isDPressed) {
     console.log("Checking for fight...");
-    let random = getRandomInt(10);
-    if (random === 9 && !isFighting) {
+    let random = getRandomInt(100);
+    if (random === 99 && !isFighting) {
       random = 0;
-      canStartFight = false; // Prevent further checks until the fight is over
+      canStartFight = false; 
       isFighting = true;
       console.log("Start fight");
       createMonster();
@@ -215,7 +212,6 @@ async function createModule(selectedDiv) {
   const module = document.createElement("div");
   module.classList.add("module");
   module.style.width = "18rem";
-  //setear data attribute al modulo
   module.setAttribute("data-module-calories", randomModule.calories);
   module.innerHTML = `
     <div class="${randomModule.moduleId}" draggable="true">
@@ -284,11 +280,11 @@ function createMonster() {
 }
 
 function showMonsters() {
-  const monsterSpacing = 120; // Espacio entre los monstruos
+  const monsterSpacing = 120; 
 
   aliveMonsters.forEach((monster, index) => {
-    const X = monsX + index * monsterSpacing; // Calcula la posición X única para cada monstruo
-    const Y = monsY - 10; // Y fijo para todos los monstruos
+    const X = monsX + index * monsterSpacing; 
+    const Y = monsY - 10; 
 
     ctx.fillStyle = "black";
     ctx.font = "14px Arial";
@@ -299,7 +295,7 @@ function showMonsters() {
     ctx.fillText(`Health: ${monster.health}`, X, Y + 120);
 
     ctx.fillStyle = "red";
-    ctx.fillRect(X, monsY, monsW, monsH); // Dibuja un rectángulo para cada monstruo
+    ctx.fillRect(X, monsY, monsW, monsH); 
   });
 }
 
@@ -334,7 +330,6 @@ function startTurn() {
       position = document.querySelector(`.random${cont1}`);
       if (position) {
         createModule(position);
-        // Decrement energy only if a module is created successfully
         if (energy > 0) {
           energy -= 1;
         }
@@ -398,13 +393,15 @@ function endFight() {
     alert("you win");
   } else {
     alert("you lose");
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   }
 
   createdMonsters.forEach((monster) => {
     monster.health = monster.originalHealth;
   });
 
-  // Resetting all arrays and variables
   isFighting = false;
   energy = 4;
   cleanModules();
@@ -424,6 +421,7 @@ function cleanModules() {
   });
 }
 
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
@@ -433,8 +431,8 @@ async function updateInfo() {
   let divEnergy = document.querySelector(".energy");
 
   if (divHealth && divEnergy) {
-    divHealth.innerText = mainHealth;
-    divEnergy.innerText = energy;
+    divHealth.innerText = "vida: " + mainHealth;
+    divEnergy.innerText = "energia: " +energy;
   }
 
   ctx.clearRect(0, 0, width, height);

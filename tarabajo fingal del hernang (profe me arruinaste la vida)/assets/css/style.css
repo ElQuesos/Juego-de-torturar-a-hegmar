@@ -119,6 +119,10 @@ background-color: aquamarine;
             width: 100px;
             margin: 25px;
             background-color: aquamarine;
+            align-content: center;
+            align-items: center;
+            justify-content: center;
+            display: flex;
         }
         
         .mouth{
@@ -133,6 +137,11 @@ background-color: aquamarine;
             width: 100px;
             margin: 25px;
             background-color: aquamarine;
+            text-align: center;
+            align-content: center;
+            align-items: center;
+            justify-content: center;
+            display: flex;
         }
     
 
